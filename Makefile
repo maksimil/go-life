@@ -1,8 +1,11 @@
-run:
-	go run ./cmd/life/main.go
+run: gen
+	go run ./cmd/life
 
-build:
-	go build -ldflags "-s -w" ./cmd/life/main.go
+build: gen
+	go build -ldflags "-s -w" ./cmd/life
 
-install:
-	go install ./cmd/navgo
+install: gen
+	go install ./cmd/life
+
+gen:
+	go run ./cmd/gen
