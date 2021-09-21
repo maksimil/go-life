@@ -12,12 +12,9 @@ const (
 	height = 500
 )
 
-var (
-	triangle = []float32{
-		-0.5, -0.5, 1,
-		0.5, -0.5, 0,
-		0.5, 0.5, 0,
-	}
+const (
+	tw = 10
+	th = 10
 )
 
 func main() {
@@ -29,36 +26,63 @@ func main() {
 	initOpenGL()
 
 	// creating shader program
-	vertexshader, err := compileShader(TRIANGLE_VERTEX, gl.VERTEX_SHADER)
-	if err != nil {
-		panic(err)
-	}
+	prog := func() uint32 {
 
-	fragmentshader, err := compileShader(TRIANGLE_FRAGMENT, gl.FRAGMENT_SHADER)
-	if err != nil {
-		panic(err)
-	}
+		vertexshader, err := compileShader(TRIANGLE_VERTEX, gl.VERTEX_SHADER)
+		if err != nil {
+			panic(err)
+		}
 
-	prog := gl.CreateProgram()
-	gl.AttachShader(prog, vertexshader)
-	gl.AttachShader(prog, fragmentshader)
-	gl.LinkProgram(prog)
+		fragmentshader, err := compileShader(TRIANGLE_FRAGMENT, gl.FRAGMENT_SHADER)
+		if err != nil {
+			panic(err)
+		}
 
-	// creating vertex buffer
-	vbo := mkvbo(triangle)
+		prog := gl.CreateProgram()
+		gl.AttachShader(prog, vertexshader)
+		gl.AttachShader(prog, fragmentshader)
+		gl.LinkProgram(prog)
+		return prog
+	}()
 
-	// creating position vao
+	idxs := func() []float32 {
+		idxs := []float32{}
+
+		for j := 0; j < th; j++ {
+			for i := 0; i < tw; i++ {
+				idxs = append(idxs,
+					float32(i+j*tw), float32(i+j*(tw+1)),
+					float32(i+j*tw), float32(i+j*(tw+1)+1),
+					float32(i+j*tw), float32(i+(j+1)*(tw+1)+1),
+
+					float32(i+j*tw), float32(i+j*(tw+1)),
+					float32(i+j*tw), float32(i+(j+1)*(tw+1)),
+					float32(i+j*tw), float32(i+(j+1)*(tw+1)+1),
+				)
+			}
+		}
+		return idxs
+	}()
+
+	// log.Println(idxs)
+
+	vbo := mkvbo(idxs)
+
 	vao := mkvao()
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	vertAttribPtr(prog, "vp\x00", 2, gl.FLOAT, 12, 0)
-	vertAttribPtr(prog, "red\x00", 1, gl.FLOAT, 12, 8)
+	vertAttribPtr(prog, "idx\x00", 1, gl.FLOAT, 8, 4)
+	vertAttribPtr(prog, "cell\x00", 1, gl.FLOAT, 8, 0)
+
+	gl.UseProgram(prog)
+	uniloc := gl.GetUniformLocation(prog, gl.Str("tilesize\x00"))
+	gl.Uniform2f(uniloc, float32(tw), float32(th))
 
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(prog)
 
 		gl.BindVertexArray(vao)
-		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(idxs)))
 		glfw.PollEvents()
 		window.SwapBuffers()
 	}
