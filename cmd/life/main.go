@@ -13,11 +13,12 @@ const (
 )
 
 const (
-	tw = 10
-	th = 10
+	tw = 2
+	th = 2
 )
 
 func main() {
+	// initialization
 	runtime.LockOSThread()
 
 	window := initGLFW()
@@ -45,6 +46,7 @@ func main() {
 		return prog
 	}()
 
+	// creating idicies for rendering
 	idxs := func() []float32 {
 		idxs := []float32{}
 
@@ -64,8 +66,6 @@ func main() {
 		return idxs
 	}()
 
-	// log.Println(idxs)
-
 	vbo := mkvbo(idxs)
 
 	vao := mkvao()
@@ -73,10 +73,12 @@ func main() {
 	vertAttribPtr(prog, "idx\x00", 1, gl.FLOAT, 8, 4)
 	vertAttribPtr(prog, "cell\x00", 1, gl.FLOAT, 8, 0)
 
+	// settting tilesize uniform
 	gl.UseProgram(prog)
-	uniloc := gl.GetUniformLocation(prog, gl.Str("tilesize\x00"))
-	gl.Uniform2f(uniloc, float32(tw), float32(th))
+	tsloc := gl.GetUniformLocation(prog, gl.Str("tilesize\x00"))
+	gl.Uniform2ui(tsloc, uint32(tw), uint32(th))
 
+	// redering loop
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(prog)
