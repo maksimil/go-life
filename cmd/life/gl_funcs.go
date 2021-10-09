@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"unsafe"
 
 	gl "github.com/go-gl/gl/v3.2-core/gl"
 	glfw "github.com/go-gl/glfw/v3.3/glfw"
@@ -58,10 +57,10 @@ func mkvao() uint32 {
 	return vao
 }
 
-func vertAttribPtr(prog uint32, name string, size int32, xtype uint32, stride int32, offset uintptr) {
-	idx := uint32(gl.GetAttribLocation(prog, gl.Str(name)))
-	gl.EnableVertexAttribArray(idx)
-	gl.VertexAttribPointer(idx, size, xtype, false, stride, unsafe.Pointer(offset))
+func vertAttribPtr(prog uint32, name string, size int32, xtype uint32, stride int32, offset int) {
+	loc := uint32(gl.GetAttribLocation(prog, gl.Str(name)))
+	gl.EnableVertexAttribArray(loc)
+	gl.VertexAttribPointer(loc, size, xtype, false, stride, gl.PtrOffset(offset))
 }
 
 func compileShader(source string, stype uint32) (uint32, error) {
@@ -85,4 +84,8 @@ func compileShader(source string, stype uint32) (uint32, error) {
 	}
 
 	return shader, nil
+}
+
+func printerr() {
+	log.Print("Err:", gl.GetError())
 }

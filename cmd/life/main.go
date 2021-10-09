@@ -13,8 +13,8 @@ const (
 )
 
 const (
-	tw = 2
-	th = 2
+	tw = 10
+	th = 10
 )
 
 func main() {
@@ -78,6 +78,41 @@ func main() {
 	tsloc := gl.GetUniformLocation(prog, gl.Str("tilesize\x00"))
 	gl.Uniform2ui(tsloc, uint32(tw), uint32(th))
 
+	// creating the texture
+	data := make([]float32, tw*th)
+
+	for i := 0; i < len(data); i++ {
+		data[i] = 1
+	}
+
+	data[0] = 0
+
+	// state texture initialization
+	var texture uint32
+	gl.GenTextures(1, &texture)
+
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.R32F, th, tw, 0,
+		gl.RED, gl.FLOAT, gl.Ptr(data))
+
+	gl.BindTexture(gl.TEXTURE_2D, 0)
+
+	gl.BindTexture(gl.TEXTURE_2D, texture)
+
+	// state texture bind
+	gl.UseProgram(prog)
+	stateloc := gl.GetUniformLocation(prog, gl.Str("state\x00"))
+	gl.Uniform1i(stateloc, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
+
+	printerr()
 	// redering loop
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
