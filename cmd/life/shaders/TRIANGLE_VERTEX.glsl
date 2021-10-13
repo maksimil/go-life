@@ -11,23 +11,30 @@ out float fred;
 out float alpha;
 
 void main() {
-    float size = tilesize.x*tilesize.y;
+    float tw = float(tilesize.x);
+    float th = float(tilesize.y);
 
-    float y = floor(idx/(tilesize.x+1));
-    float x = idx - y*(tilesize.x+1);
+    float size = tw*th;
 
-    x *= 2.0/tilesize.x;
-    y *= 2.0/tilesize.y;
+    float y = floor((idx+0.1)/(tw+1));
+    float x = idx - y*(tw+1);
+
+    x *= 2.0/tw;
+    y *= 2.0/th;
 
     gl_Position = vec4((x-1.0), (-y+1.0), 0.0, 1.0);
 
     fred = cell/(size-1);
 
-    float ty = floor(cell/tilesize.x);
-    float tx = (cell-ty*tilesize.x)/tilesize.x;
-    ty /= tilesize.y;
-    tx += 1/(2*tilesize.x);
-    ty += 1/(2*tilesize.y);
+    float ty = floor((cell+0.1)/tw);
+    float tx = cell-ty*tw;
+
+    tx += 0.5;
+    tx /= tw;
+
+    ty += 0.5;
+    ty /= th;
 
     alpha = texture(state, vec2(tx, ty)).x;
+    // alpha = 1;
 }

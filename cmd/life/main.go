@@ -13,8 +13,8 @@ const (
 )
 
 const (
-	tw = 10
-	th = 10
+	tw = 100
+	th = 100
 )
 
 func main() {
@@ -79,13 +79,13 @@ func main() {
 	gl.Uniform2ui(tsloc, uint32(tw), uint32(th))
 
 	// creating the texture
-	data := make([]float32, tw*th)
-
-	for i := 0; i < len(data); i++ {
-		data[i] = 1
-	}
+	// data initialization
+	data := make([]uint8, 2*tw*th)
 
 	data[0] = 0
+	data[1] = 255
+	data[2] = 255
+	data[3] = 255
 
 	// state texture initialization
 	var texture uint32
@@ -95,15 +95,13 @@ func main() {
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.R32F, th, tw, 0,
-		gl.RED, gl.FLOAT, gl.Ptr(data))
-
-	gl.BindTexture(gl.TEXTURE_2D, 0)
-
-	gl.BindTexture(gl.TEXTURE_2D, texture)
+	gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, int32(tw), int32(th), 0,
+		gl.RED, gl.UNSIGNED_BYTE, gl.Ptr(data))
 
 	// state texture bind
 	gl.UseProgram(prog)
@@ -123,4 +121,5 @@ func main() {
 		glfw.PollEvents()
 		window.SwapBuffers()
 	}
+	printerr()
 }
