@@ -2,19 +2,21 @@ package main
 
 import (
 	"runtime"
+	"time"
+	"unsafe"
 
 	gl "github.com/go-gl/gl/v3.2-core/gl"
 	glfw "github.com/go-gl/glfw/v3.3/glfw"
 )
 
 const (
-	width  = 500
-	height = 500
+	width  = 750
+	height = 750
 )
 
 const (
-	tw = 100
-	th = 100
+	tw = 1000
+	th = 1000
 )
 
 func main() {
@@ -80,12 +82,17 @@ func main() {
 
 	// creating the texture
 	// data initialization
-	data := make([]uint8, 2*tw*th)
+	state := newSwitch([2]int{tw, th})
 
-	data[0] = 0
-	data[1] = 255
-	data[2] = 255
-	data[3] = 255
+	state.states[502_510] = 1
+	state.states[502_511] = 1
+	state.states[502_514] = 1
+	state.states[502_515] = 1
+	state.states[502_516] = 1
+
+	state.states[501_513] = 1
+
+	state.states[500_511] = 1
 
 	// state texture initialization
 	var texture uint32
@@ -101,7 +108,7 @@ func main() {
 
 	gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, int32(tw), int32(th), 0,
-		gl.RED, gl.UNSIGNED_BYTE, gl.Ptr(data))
+		gl.RED, gl.UNSIGNED_BYTE, state.getTexData())
 
 	// state texture bind
 	gl.UseProgram(prog)
@@ -111,8 +118,10 @@ func main() {
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 
 	printerr()
+	LOOPTIME := int64(1 * 1000000)
 	// redering loop
 	for !window.ShouldClose() {
+		s := time.Now()
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.UseProgram(prog)
 
@@ -120,6 +129,67 @@ func main() {
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(idxs)))
 		glfw.PollEvents()
 		window.SwapBuffers()
+
+		state.update()
+		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RED, int32(tw), int32(th), 0,
+			gl.RED, gl.UNSIGNED_BYTE, state.getTexData())
+		elapsed := time.Since(s).Nanoseconds()
+		time.Sleep(time.Duration(LOOPTIME - elapsed))
 	}
 	printerr()
+}
+
+type StateSwitch struct {
+	states   []uint8
+	size     [2]int
+	stateidx int
+}
+
+func newSwitch(size [2]int) StateSwitch {
+	return StateSwitch{
+		make([]uint8, size[0]*size[1]*2),
+		size, 0,
+	}
+}
+
+func (state *StateSwitch) get(k int, i int, j int) *uint8 {
+	return &state.states[i+state.size[0]*j+state.size[0]*state.size[1]*k]
+}
+
+func (state *StateSwitch) getcurr(i int, j int) *uint8 {
+	return state.get(state.stateidx, i, j)
+}
+
+func (state *StateSwitch) getnext(i int, j int) *uint8 {
+	return state.get(1-state.stateidx, i, j)
+}
+
+var OFFSETS = [8][2]int{
+	{-1, 1}, {0, 1}, {1, 1},
+	{-1, 0}, {1, 0},
+	{-1, -1}, {0, -1}, {1, -1},
+}
+
+func (state *StateSwitch) update() {
+	for i := 0; i < state.size[0]; i++ {
+		for j := 0; j < state.size[1]; j++ {
+			ncount := uint8(0)
+			for k := 0; k < 8; k++ {
+				in := (i + OFFSETS[k][0] + state.size[0]) % state.size[0]
+				jn := (j + OFFSETS[k][1] + state.size[1]) % state.size[1]
+				ncount += *state.getcurr(in, jn)
+			}
+
+			if (*state.getcurr(i, j)+ncount == 3) || ncount == 3 {
+				*state.getnext(i, j) = 1
+			} else {
+				*state.getnext(i, j) = 0
+			}
+		}
+	}
+	state.stateidx = 1 - state.stateidx
+}
+
+func (state *StateSwitch) getTexData() unsafe.Pointer {
+	return gl.Ptr(&state.states[state.stateidx*state.size[0]*state.size[1]])
 }

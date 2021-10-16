@@ -35,6 +35,5 @@ void main() {
     ty += 0.5;
     ty /= th;
 
-    alpha = texture(state, vec2(tx, ty)).x;
-    // alpha = 1;
+    alpha = texture(state, vec2(tx, ty)).x*255;
 }
