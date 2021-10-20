@@ -7,7 +7,6 @@ uniform sampler2D state;
 in float idx;
 in float cell;
 
-out float fred;
 out float alpha;
 
 void main() {
@@ -23,8 +22,6 @@ void main() {
     y *= 2.0/th;
 
     gl_Position = vec4((x-1.0), (-y+1.0), 0.0, 1.0);
-
-    fred = cell/(size-1);
 
     float ty = floor((cell+0.1)/tw);
     float tx = cell-ty*tw;

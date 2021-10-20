@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bufio"
+	"os"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -9,21 +13,55 @@ import (
 	glfw "github.com/go-gl/glfw/v3.3/glfw"
 )
 
-const (
-	width  = 750
-	height = 750
-)
+func readstring(reader *bufio.Reader, delim byte) string {
+	s, err := reader.ReadString(delim)
+	if err != nil {
+		panic(err)
+	}
+	return strings.Trim(s, " \n\r")
+}
 
-const (
-	tw = 1000
-	th = 1000
-)
+func readint(reader *bufio.Reader, delim byte) int {
+	s := readstring(reader, delim)
+	out, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+func readfloat(reader *bufio.Reader, delim byte) float64 {
+	s := readstring(reader, delim)
+	out, err := strconv.ParseFloat(s, 32)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
 
 func main() {
+	// read input
+	reader := bufio.NewReader(os.Stdin)
+	period := readfloat(reader, '\n')
+	width := readint(reader, ' ')
+	height := readint(reader, '\n')
+
+	tw := readint(reader, ' ')
+	th := readint(reader, '\n')
+
+	offx := readint(reader, ' ')
+	offy := readint(reader, '\n')
+
+	scanner := bufio.NewScanner(reader)
+	drawdata := []string{}
+	for scanner.Scan() {
+		drawdata = append(drawdata, scanner.Text())
+	}
+
 	// initialization
 	runtime.LockOSThread()
 
-	window := initGLFW()
+	window := initGLFW(width, height)
 	defer glfw.Terminate()
 
 	initOpenGL()
@@ -84,15 +122,13 @@ func main() {
 	// data initialization
 	state := newSwitch([2]int{tw, th})
 
-	state.states[502_510] = 1
-	state.states[502_511] = 1
-	state.states[502_514] = 1
-	state.states[502_515] = 1
-	state.states[502_516] = 1
-
-	state.states[501_513] = 1
-
-	state.states[500_511] = 1
+	for i := 0; i < len(drawdata); i++ {
+		for j := 0; j < len(drawdata[i]); j++ {
+			if drawdata[i][j] == '+' {
+				state.states[(offx+i)+tw*(offy+j)] = 1
+			}
+		}
+	}
 
 	// state texture initialization
 	var texture uint32
@@ -118,7 +154,7 @@ func main() {
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 
 	printerr()
-	LOOPTIME := int64(1 * 1000000)
+	LOOPTIME := int64(period * 1_000_000)
 	// redering loop
 	for !window.ShouldClose() {
 		s := time.Now()

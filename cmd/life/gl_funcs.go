@@ -9,7 +9,7 @@ import (
 	glfw "github.com/go-gl/glfw/v3.3/glfw"
 )
 
-func initGLFW() *glfw.Window {
+func initGLFW(width int, height int) *glfw.Window {
 	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
